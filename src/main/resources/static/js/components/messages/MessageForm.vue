@@ -1,15 +1,19 @@
 <template>
     <v-layout row>
-        <v-text-field label="New message" placeholder="Write something" v-model="text"/>
-        <v-btn @click="save">Save</v-btn>
+        <v-text-field label="New message"
+                      placeholder="Write something"
+                      v-model="text"/>
+        <v-btn @click="save">
+            Save
+        </v-btn>
     </v-layout>
 </template>
 
 <script>
-    import messagesApi from 'api/messages'
+    import { mapActions } from 'vuex'
 
     export default {
-        props: ['messages', 'messageAttribute'],
+        props: ['messageAttribute'],
         data() {
             return {
                 text: '',
@@ -23,27 +27,17 @@
             }
         },
         methods: {
+            ...mapActions(['addMessageAction', 'updateMessageAction']),
             save() {
-                const message = {id: this.id, text: this.text}
+                const message = {
+                    id: this.id,
+                    text: this.text
+                }
 
                 if (this.id) {
-                    messagesApi.update(message).then(result =>
-                        result.json().then(data => {
-                            const index = this.messages.findIndex(item => item.id === data.id)
-                            this.messages.splice(index, 1, data)
-                        })
-                    )
+                    this.updateMessageAction(message)
                 } else {
-                    messagesApi.add(message).then(result =>
-                        result.json().then(data => {
-                            const index = this.messages.findIndex(item => item.id === data.id)
-                            if(index > -1){
-                                this.messages.splice(index, 1, data)
-                            } else {
-                                this.messages.push(data)
-                            }
-                        })
-                    )
+                    this.addMessageAction(message)
                 }
 
                 this.text = ''
