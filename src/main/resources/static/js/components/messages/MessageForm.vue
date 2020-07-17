@@ -37,9 +37,14 @@
                 }
 
                 if (this.id) {
-                    this.updateMessageAction(message)
+                    this.updateMessageAction({
+                        id: this.id,
+                        text: this.text
+                    });
                 } else {
-                    this.addMessageAction(message)
+                    this.addMessageAction({
+                        text: this.text
+                    });
                 }
 
                 this.text = ''

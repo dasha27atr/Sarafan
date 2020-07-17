@@ -21,10 +21,11 @@ public class Comment {
 
     @ManyToOne
     @JoinColumn(name = "message_id")
+    @JsonView(View.FullComment.class)
     private Message message;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false, updatable = false)
-    @JsonView(View.FullMessage.class)
+    @JsonView(View.IdName.class)
     private User author;
 }
