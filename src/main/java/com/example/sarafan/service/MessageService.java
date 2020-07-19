@@ -2,12 +2,14 @@ package com.example.sarafan.service;
 
 import com.example.sarafan.domain.Message;
 import com.example.sarafan.domain.User;
+import com.example.sarafan.domain.UserSubscription;
 import com.example.sarafan.domain.View;
 import com.example.sarafan.domain.dto.EventType;
 import com.example.sarafan.domain.dto.MessagePageDto;
 import com.example.sarafan.domain.dto.MetaDto;
 import com.example.sarafan.domain.dto.ObjectType;
 import com.example.sarafan.repository.MessageRepository;
+import com.example.sarafan.repository.UserSubscriptionRepository;
 import com.example.sarafan.util.WsSender;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -21,9 +23,11 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class MessageService {
@@ -34,11 +38,16 @@ public class MessageService {
     private static Pattern IMG_REGEX = Pattern.compile(IMAGE_PATTERN, Pattern.CASE_INSENSITIVE);
 
     private final MessageRepository messageRepository;
+    private final UserSubscriptionRepository userSubscriptionRepository;
     private final BiConsumer<EventType, Message> wsSender;
 
     @Autowired
-    public MessageService(MessageRepository messageRepository, WsSender wsSender) {
+    public MessageService(MessageRepository messageRepository,
+                          UserSubscriptionRepository userSubscriptionRepository,
+                          WsSender wsSender
+    ) {
         this.messageRepository = messageRepository;
+        this.userSubscriptionRepository = userSubscriptionRepository;
         this.wsSender = wsSender.getSender(ObjectType.MESSAGE, View.IdName.class);
     }
 
@@ -110,8 +119,16 @@ public class MessageService {
         return updatedMessage;
     }
 
-    public MessagePageDto findAll(Pageable pageable) {
-        Page<Message> page = messageRepository.findAll(pageable);
+    public MessagePageDto findForUser(Pageable pageable, User user) {
+        List<User> channels = userSubscriptionRepository.findBySubscriber(user)
+                .stream()
+                .map(UserSubscription::getChannel)
+                .collect(Collectors.toList());
+
+        channels.add(user);
+
+        Page<Message> page = messageRepository.findByAuthorIn(channels, pageable);
+
         return new MessagePageDto(
                 page.getContent(),
                 pageable.getPageNumber(),
